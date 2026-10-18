@@ -10,7 +10,7 @@ By Robbie (designed and tested on a Digitone mk1, OS 1.44). GPL-2.0-or-later.
 
 <p align="center"><img src="docs/snake.png" width="200" alt="DIGISNAKE"></p>
 
-![The snake walking a ZIGZAG path on the NOTES page](docs/walk.gif)
+
 
 > Unofficial and unsupported. Flashing modified firmware is at your own risk; the stock OS always
 > recovers the unit (send the stock .syx from the boot menu).
