@@ -8,7 +8,7 @@ four MIDI tracks, for external gear.
 
 By Robbie (designed and tested on a Digitone mk1, OS 1.44). GPL-2.0-or-later.
 
-<p align="center"><img src="docs/snake.png" width="200" alt="DIGISNAKE"></p>
+
 
 
 
