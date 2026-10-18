@@ -1,0 +1,146 @@
+{
+ "id": "digisnake",
+ "version": "1.0",
+ "title": "digisnake",
+ "category": "Sequencer",
+ "license": "GPL-2.0-or-later",
+ "author": "Robbie",
+ "description": "A Cartesian step sequencer after MDD Snake (and Make Noise's Rene): eight steps in a 4 x 2 grid that matches knobs A-H, walked by a path in one of seven shapes (ROWS, SNAKE, COLS, ZIGZAG, DIAG, CORNER, HOP), forwards, backwards, ping-pong or at random. Per track, synth and MIDI: NOTES (semitones from NOTE, quantised to a scale in the keyboard's ROOT), GATES and VELOCITY pages, and a PATH page (ON, SHAPE, DIR, LEN, DIV: 1/8, 1/4, 1/2, 1X or 2X (1/2 plays every other step, eighth notes at 16th steps), the track at twice its speed in per-track SCALE mode, SCALE, RANGE, SHIFT), saved with the project. The page is TRIG's next page (press TRIG again) on synth and MIDI tracks, or SNAKE in core-dn1's Mod Menu; LEFT/RIGHT change page, hold TRIG + YES randomises a page (PATH: all but SNAKE and SCALE), hold TRIG + REC copies a page and TRIG + STOP pastes it onto another track, TRIG + PLAY clears it, TRIG + FUNC + REC prints the snake into the track's own trigs, notes and velocities and turns SNAKE off, FUNC + YES all of them, hold TRIG + NO goes back to how the snake was when TRIG went down, FUNC + NO to before a run of FUNC + YES, FUNC + a knob jumps (NOTES by octaves, VELOCITY by quarters, RANGE 0/12/24). On OS 1.44 the stock drop-down message names what happened, and the snake survives a power cycle. For OS 1.43 and 1.44; needs core-dn1 3.3 and seq-events.",
+ "device": "digitone-mk1",
+ "os": "1.43",
+ "sources": [
+  "digisnake.c"
+ ],
+ "cflags": [
+  "-DTRIG_PAGE=1",
+  "-DTRIG_KIND=9"
+ ],
+ "subscribe": [
+  {
+   "event": "ev_gen_trig",
+   "fn": "digisnake_trig",
+   "order": 50
+  },
+  {
+   "event": "ev_gen_notes",
+   "fn": "digisnake_notes",
+   "order": 50
+  },
+  {
+   "event": "ev_fire_vel",
+   "fn": "digisnake_vel",
+   "order": 50
+  },
+  {
+   "event": "ev_key",
+   "fn": "digisnake_key",
+   "order": 40
+  },
+  {
+   "event": "ev_enc",
+   "fn": "digisnake_enc",
+   "order": 40
+  },
+  {
+   "event": "ev_tick",
+   "fn": "digisnake_tick",
+   "order": 50
+  },
+  {
+   "event": "ev_draw",
+   "fn": "digisnake_draw",
+   "order": 60
+  }
+ ],
+ "contribute": [
+  {
+   "to": "core_pages",
+   "order": 52,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:digisnake_page",
+     0
+    ]
+   ]
+  },
+  {
+   "to": "core_pages",
+   "order": 53,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:digisnake_page_midi",
+     0
+    ]
+   ]
+  },
+  {
+   "to": "core_projdata",
+   "order": 52,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:digisnake_projdata",
+     0
+    ]
+   ]
+  },
+  {
+   "to": "core_projdata",
+   "order": 53,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:digisnake_projdata2",
+     0
+    ]
+   ]
+  },
+  {
+   "to": "core_menu",
+   "order": 52,
+   "data": "00000000",
+   "relocs": [
+    [
+     0,
+     "abs32",
+     "sym:digisnake_menu",
+     0
+    ]
+   ]
+  }
+ ],
+ "resources": {
+  "names": [
+   "page:28",
+   "page:29",
+   "projdata:SNK1",
+   "projdata:SNK2"
+  ],
+  "core": "3.3"
+ },
+ "ports": {
+  "1.44": {
+   "cflags": [
+    "-DTRIG_PAGE=1",
+    "-DTRIG_KIND=9",
+    "-DSNK_MIRROR",
+    "-DSNK_POPUP_GET=0x4014a060",
+    "-DSNK_POPUP_PRINTF=0x400ae25c"
+   ]
+  }
+ },
+ "requires": [
+  "core",
+  "seq-events"
+ ]
+}
