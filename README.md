@@ -8,6 +8,10 @@ four MIDI tracks, for external gear.
 
 By Robbie (designed and tested on a Digitone mk1, OS 1.44). GPL-2.0-or-later.
 
+<p align="center"><img src="docs/snake.png" width="200" alt="DIGISNAKE"></p>
+
+![The snake walking a ZIGZAG path on the NOTES page](docs/walk.gif)
+
 > Unofficial and unsupported. Flashing modified firmware is at your own risk; the stock OS always
 > recovers the unit (send the stock .syx from the boot menu).
 
@@ -40,6 +44,15 @@ cycle. New projects start with a little demo line.
 ## Pages
 
 **LEFT / RIGHT** move between the four pages. On NOTES, GATES and VELOCITY, knobs A–H are the eight cells.
+The small number in each cell's corner is its place on the path; the thick frame is the playhead.
+
+| NOTES | GATES |
+|---|---|
+| ![NOTES](docs/1-notes.png) | ![GATES](docs/2-gates.png) |
+| **VELOCITY** | **PATH** |
+| ![VELOCITY](docs/3-velocity.png) | ![PATH](docs/4-path.png) |
+
+The pages as DIGISNAKE 1.0 draws them (the Digitone's own title bar sits above).
 
 | Page | Knobs A–H | Also |
 |---|---|---|
