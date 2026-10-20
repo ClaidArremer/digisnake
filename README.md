@@ -95,9 +95,9 @@ random run.
 ## With DIRECT JUMP
 
 With [DIRECT JUMP](https://github.com/ClaidArremer/directjump) 1.4 or later in the build, a pattern started by
-its START ON BAR (from step 1 on the next bar line, or the playing pattern relaunched) starts every snake from
-the beginning of its path too, so the whole groove relaunches together on the downbeat. A legato jump leaves
-the snakes walking. Without DIRECT JUMP nothing changes.
+its START ON BAR (from step 1 on the next bar line, or the playing pattern relaunched on the beat) starts every
+snake from the beginning of its path too, so the whole groove relaunches together. A legato jump leaves the
+snakes walking. Without DIRECT JUMP nothing changes. Tested on a Digitone mk1 (OS 1.44) with DIRECT JUMP 1.5.
 
 ## How it works
 
