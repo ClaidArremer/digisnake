@@ -21,17 +21,18 @@ By Robbie (designed and tested on a Digitone mk1, OS 1.44). GPL-2.0-or-later.
 |---|---|
 | Unit | Digitone mk1 or Digitone Keys |
 | OS | **1.44** (tested). A 1.43 build is included, untested; on 1.43 there are no drop-down messages and settings are not kept over a power cycle |
-| Mods | elekloader's **core-dn1** (3.3 or later) and **seq-events** (0.1), both shipped with elekloader |
+| Mods | elekloader's **core-dn1** (3.3 or later), built into the elekloader app, and **seq-events** (0.1), included here in `elemods/` (the elekloader app does not ship it yet) |
 
 ## Install
 
-Add `elemods/digisnake-1.1-os1.44.elemod` (or the 1.43 file) in the elekloader app together with core-dn1
-and seq-events, build, and send the firmware to the Digitone. From the command line:
+In the elekloader app, add both files for your OS from `elemods/`: `digisnake-1.1-os1.44.elemod` and
+`seq-events-0.1-os1.44.elemod` (or the two `-os1.43` files). Tick both, keep the app's core-dn1 ticked,
+build, and send the firmware to the Digitone. From the command line:
 
 ```
 python -m elekloader.patch --stock Digitone_and_Digitone_Keys_OS1.44.syx \
-  --mod core-4.0-os1.44.elemod --mod seq-events-0.1-os1.44.elemod \
-  --mod digisnake-1.1-os1.44.elemod --out Digitone_digisnake.syx
+  --mod core-4.1.1-os1.44.elemod --mod elemods/seq-events-0.1-os1.44.elemod \
+  --mod elemods/digisnake-1.1-os1.44.elemod --out Digitone_digisnake.syx
 ```
 
 ## Opening it
@@ -124,7 +125,12 @@ and **Make Noise René**; no code from either. The random numbers use Marsaglia'
 algorithm.
 
 DIGISNAKE builds against irpina's [elekloader](https://github.com/irpina/elekloader) SDK headers and runs on
-its core-dn1 and seq-events (GPL-2.0-or-later); none of them is included here. The firmware addresses in
+its core-dn1 and seq-events (GPL-2.0-or-later). core-dn1 is not included here. seq-events is: the two
+`elemods/seq-events-0.1-*.elemod` files are unmodified builds of elekloader's `mods/seq-events-dn1`
+(GPL-2.0-or-later, by elekloader's contributors), made from
+[its source at commit 92a99c9](https://github.com/irpina/elekloader/tree/92a99c958f9e17bfb93882385037b84185fc0420/mods/seq-events-dn1), because
+the elekloader app does not ship seq-events yet. They carry only that mod's own code and no Elektron
+code. The firmware addresses in
 `mod.json` and the pattern layout DIGISNAKE prints into were found by studying the Digitone's own OS so the
 mod can work with it; no Elektron code is included.
 
