@@ -202,6 +202,14 @@ static void check_track(struct snake *s)
 static unsigned char data_ready;
 static volatile unsigned char reset_req[TRACKS];
 
+/* DIRECT JUMP (1.4 or later), when the build has it: its count of pattern starts
+ * (START ON BAR: a pattern launched from its first step on a bar line). When it
+ * moves, every snake starts its path again with the pattern, so the whole groove
+ * relaunches together. A weak import (mod.json): without DIRECT JUMP it reads 0
+ * and never moves. */
+extern volatile uint32_t dj_starts;
+static uint32_t dj_seen[TRACKS];
+
 /* ---- surviving a power cycle (OS 1.44) ------------------------------------
  * Core saves digisnake_data inside the project each time the OS serializes it.
  * What a power cycle keeps is the OS's power-up copy (its "mirror"), which it
@@ -365,8 +373,10 @@ void digisnake_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
         if (fw_transport == 0) {            /* stopped: prepare the first step */
             start(p, s, len);
             reset_req[track] = 1;
-        } else if (reset_req[track]) {
+            dj_seen[track] = dj_starts;
+        } else if (reset_req[track] || dj_starts != dj_seen[track]) {
             reset_req[track] = 0;
+            dj_seen[track] = dj_starts;     /* a pattern start: from the path's start */
             start(p, s, len);
         } else if (++p->count >= s->set[P_DIV]) {
             p->count = 0;

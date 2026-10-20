@@ -25,13 +25,13 @@ By Robbie (designed and tested on a Digitone mk1, OS 1.44). GPL-2.0-or-later.
 
 ## Install
 
-Add `elemods/digisnake-1.0-os1.44.elemod` (or the 1.43 file) in the elekloader app together with core-dn1
+Add `elemods/digisnake-1.1-os1.44.elemod` (or the 1.43 file) in the elekloader app together with core-dn1
 and seq-events, build, and send the firmware to the Digitone. From the command line:
 
 ```
 python -m elekloader.patch --stock Digitone_and_Digitone_Keys_OS1.44.syx \
   --mod core-4.0-os1.44.elemod --mod seq-events-0.1-os1.44.elemod \
-  --mod digisnake-1.0-os1.44.elemod --out Digitone_digisnake.syx
+  --mod digisnake-1.1-os1.44.elemod --out Digitone_digisnake.syx
 ```
 
 ## Opening it
@@ -52,7 +52,7 @@ The small number in each cell's corner is its place on the path; the thick frame
 | **VELOCITY** | **PATH** |
 | ![VELOCITY](docs/3-velocity.png) | ![PATH](docs/4-path.png) |
 
-The pages as DIGISNAKE 1.0 draws them (the Digitone's own title bar sits above).
+The pages as DIGISNAKE draws them (the Digitone's own title bar sits above).
 
 | Page | Knobs A–H | Also |
 |---|---|---|
@@ -91,11 +91,19 @@ PAGE is the TRIG key, held. On OS 1.44 every action shows the stock drop-down me
 Print keeps lock trigs and parameter locks, and a 2X track stays at 2X. With DIR on RND it freezes one
 random run.
 
+## With DIRECT JUMP
+
+With [DIRECT JUMP](https://github.com/ClaidArremer/directjump) 1.4 or later in the build, a pattern started by
+its START ON BAR (from step 1 on the next bar line, or the playing pattern relaunched) starts every snake from
+the beginning of its path too, so the whole groove relaunches together on the downbeat. A legato jump leaves
+the snakes walking. Without DIRECT JUMP nothing changes.
+
 ## How it works
 
 DIGISNAKE uses seq-events' step-fire events: `ev_gen_trig` decides whether a step fires, `ev_gen_notes`
 its note and `ev_fire_vel` its velocity, so the stock sequencer plays everything (timing, note length,
-locks). The page is a core-dn1 mod page after the TRIG page (page 28 for synth tracks, 29 for MIDI
+locks). It reads DIRECT JUMP's count of pattern starts, `dj_starts`, as a weak import: a build without DIRECT JUMP
+links it to core's zero word. The page is a core-dn1 mod page after the TRIG page (page 28 for synth tracks, 29 for MIDI
 tracks), the settings are core-dn1 project data (`SNK1`, `SNK2`), and on OS 1.44 an edit asks the OS to
 refresh its power-up copy of the project. No firmware address is named in the C source except the
 drop-down message and the power-up copy on 1.44 (`mod.json`'s 1.44 port).
