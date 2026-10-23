@@ -19,8 +19,9 @@
  * trigs still play). Everything is per track (T1-T4) and saved with the
  * project.
  *
- * The page is TRIG's next page: press TRIG again from the TRIG page. Also in
- * core-dn1's Mod Menu (hold a track key) as SNAKE. On the page:
+ * The page is TRIG's next page: press TRIG again from the TRIG page. It is
+ * not in core-dn1's Mod Menu (hold a track key), which stays free for
+ * machines and other mods. On the page:
  *   knobs A-H        the cells of the page shown (PATH: its eight settings)
  *   LEFT / RIGHT     the previous / next page
  *   UP / DOWN        NOTES: all notes up/down a semitone (FUNC: an octave);
@@ -36,7 +37,7 @@
  *   FUNC + YES       randomise NOTES, GATES and VELOC together
  *   FUNC + NO        back to before the last run of FUNC + YES
  *   FUNC + knob      jump: NOTES -24/-12/0/+12/+24, VELOC 1/32/64/96/127,
- *                    PATH's RANGE 0/12/24
+ *                    PATH's RANGE 1/12/24
  *   TRIG on its own  on to TRIG's next page, as stock
  *
  * On OS 1.44 (its port's cflags) the stock drop-down message names what a
@@ -45,7 +46,7 @@
  *
  * The sequencer side uses seq-events (step-fire events): ev_gen_trig decides
  * whether a step fires, ev_gen_notes its note and ev_fire_vel its velocity.
- * The UI uses core-dn1's mod page, project data and Mod Menu. No firmware
+ * The UI uses core-dn1's mod page and project data. No firmware
  * address is named here, so one source builds for 1.43 and 1.44.
  */
 #include "digitone-mk1/core3.h"
@@ -120,7 +121,7 @@ static const char *const scale_names[SCALES] = {
     "CHR", "MAJ", "MIN", "DOR", "PHR", "LYD", "MIX", "HMIN", "PENT", "mPNT", "BLUE", "WHOL"
 };
 
-static const unsigned char set_min[NSET] = { 0, 0, 0, 1, 0, 0, 0, 0 };
+static const unsigned char set_min[NSET] = { 0, 0, 0, 1, 0, 0, 1, 0 };   /* RANGE from 1 (1.2) */
 static const unsigned char set_max[NSET] = { 1, SHAPES - 1, DIRS - 1, CELLS, 8, SCALES - 1, NOTE_MAX, CELLS - 1 };
 static const char *const set_labels[NSET] = { "SNAKE", "SHAPE", "DIR", "LEN", "DIV", "SCALE", "RANGE", "SHIFT" };
 
@@ -194,13 +195,22 @@ static void check_track(struct snake *s)
     }
     for (c = 0; c < NSET; c++)
         if (s->set[c] < set_min[c] || s->set[c] > set_max[c])
-            s->set[c] = c == P_DIV ? 1 : set_min[c];     /* DIV: 1X, never 2X */
+            s->set[c] = c == P_DIV ? 1                   /* DIV: 1X, never 2X */
+                      : c == P_RANGE ? 12                /* RANGE 0 (before 1.2): the default */
+                      : set_min[c];
     if (s->set[P_LEN] < 1)
         s->set[P_LEN] = CELLS;
 }
 
 static unsigned char data_ready;
 static volatile unsigned char reset_req[TRACKS];
+/* Starting from STOP (1.2). The sequencer prepares step 1 while stopped (a fire
+ * with the transport at 0): that fire starts the path (prep), and the first fire
+ * after PLAY is then step 2, one on. Without a prepare (rewind, set while
+ * stopped), the first fire after PLAY starts the path. Before 1.2 the start was
+ * also asked for while stopped and taken by step 2, so step 1 and step 2 both
+ * played the path's first cell: the snake ran a step late. */
+static volatile unsigned char prep[TRACKS], rewind[TRACKS];
 
 /* DIRECT JUMP (1.4 or later), when the build has it: its count of pattern starts
  * (START ON BAR: a pattern launched from its first step on a bar line). When it
@@ -338,6 +348,7 @@ static void step_on(struct play *p, const struct snake *s, int len, unsigned lon
 static void start(struct play *p, const struct snake *s, int len)
 {
     p->count = 0;
+    p->moved = 1;
     if (s->set[P_DIR] == D_BWD || s->set[P_DIR] == D_BF) {
         p->k = (unsigned char)(len - 1);
         p->pp = -1;
@@ -351,6 +362,18 @@ static int cell_of(const struct snake *s, int k, int len)
 {
     int i = (k + s->set[P_SHIFT]) % len;
     return shapes[s->set[P_SHAPE] % SHAPES][i];
+}
+
+/* One sequencer step on: a snake step every DIV steps, a rest between. */
+static void advance(struct play *p, const struct snake *s, int len)
+{
+    if (++p->count >= s->set[P_DIV]) {
+        p->count = 0;
+        p->moved = 1;
+        step_on(p, s, len, &irq_rand);
+    } else {
+        p->moved = 0;                       /* DIV 1/2 .. 1/8: between snake steps */
+    }
 }
 
 /* Does the step fire. Both reads of a step (first 1, then 0) must answer the
@@ -369,20 +392,26 @@ void digisnake_trig(int32_t track, int32_t step, int32_t first, uint32_t *trig)
     if (len < 1 || len > CELLS)
         len = CELLS;
     if (first) {
-        p->moved = 1;
         if (fw_transport == 0) {            /* stopped: prepare the first step */
-            start(p, s, len);
-            reset_req[track] = 1;
+            prep[track] = 1;
+            rewind[track] = reset_req[track] = 0;
             dj_seen[track] = dj_starts;
+            start(p, s, len);
+        } else if (prep[track] || rewind[track]) {
+            /* the first fire after PLAY: step 1 is the path's start (step 2
+             * when step 1 was prepared while stopped, or before SNAKE was on) */
+            int n;
+            prep[track] = rewind[track] = reset_req[track] = 0;
+            dj_seen[track] = dj_starts;
+            start(p, s, len);
+            for (n = 0; n < step && n < SQ_STEPS; n++)
+                advance(p, s, len);
         } else if (reset_req[track] || dj_starts != dj_seen[track]) {
             reset_req[track] = 0;
             dj_seen[track] = dj_starts;     /* a pattern start: from the path's start */
             start(p, s, len);
-        } else if (++p->count >= s->set[P_DIV]) {
-            p->count = 0;
-            step_on(p, s, len, &irq_rand);
         } else {
-            p->moved = 0;                   /* DIV 1/2 .. 1/8: between snake steps */
+            advance(p, s, len);
         }
         if (p->k >= len)
             p->k = 0;
@@ -520,7 +549,8 @@ static int print_track(int t)
     struct sq_track info;
     struct play q;
     unsigned long rnd = 0x9e3779b9UL ^ fw_timeline;
-    int len, plen, base, root = 0, step, i;
+    int len, plen, base, root = 0, step, i, first, playing, pending;
+    uint32_t last;
     if (!pat || sq_track_info(t, &info, sizeof info) != 0)
         return -1;
     len = info.len;
@@ -536,17 +566,25 @@ static int print_track(int t)
     plen = s->set[P_LEN];
     if (plen < 1 || plen > CELLS)
         plen = CELLS;
-    start(&q, s, plen);
-    for (step = 0; step < len; step++) {
+    /* Playing: carry on from where the snake is, so step N gets what step N
+     * plays next time round (the path seldom sits at its start on step 1).
+     * Stopped: from the path's start on step 1, as PLAY starts it. */
+    last = sq_clock[t].last;
+    playing = fw_transport == 1 && s->set[P_ON] && last < (uint32_t)len;
+    pending = !playing || reset_req[t] || prep[t] || rewind[t] || dj_starts != dj_seen[t];
+    first = playing ? ((int)last + 1) % len : 0;
+    q = play[t];
+    for (i = 0; i < len; i++) {
         int cell, n, moved = 1;
         uint16_t w;
-        if (step > 0) {
-            if (++q.count >= s->set[P_DIV]) {
-                q.count = 0;
-                step_on(&q, s, plen, &rnd);
-            } else {
-                moved = 0;                  /* DIV: a rest between snake steps */
-            }
+        step = (first + i) % len;
+        if (i == 0 && pending) {
+            start(&q, s, plen);             /* the next step starts the path */
+        } else if (++q.count >= s->set[P_DIV]) {
+            q.count = 0;
+            step_on(&q, s, plen, &rnd);
+        } else {
+            moved = 0;                      /* DIV: a rest between snake steps */
         }
         if (q.k >= plen)
             q.k = 0;
@@ -560,8 +598,8 @@ static int print_track(int t)
         n = quantise(base + s->note[cell], root, s->set[P_SCALE]);
         if (n < 0) n = 0; else if (n > 127) n = 127;
         trk[0x1c0 + 8 * step] = (uint8_t)n;
-        for (i = 1; i < 8; i++)
-            trk[0x1c0 + 8 * step + i] = 0;
+        for (n = 1; n < 8; n++)             /* no chord */
+            trk[0x1c0 + 8 * step + n] = 0;
         trk[0x80 + step] = s->vel[cell];
     }
     if (mod_pat[t]) {                       /* keep the 2X the print was made at */
@@ -645,6 +683,7 @@ static const char *const page_names[PAGES] = { "NOTES", "GATES", "VELOCITY", "PA
 unsigned char digisnake_pg;             /* the page shown */
 void *digisnake_brain;                  /* the key dispatcher's brain, for ev_draw */
 static unsigned char trig_held, trig_used, in_open;
+static unsigned char stock_held, stock_used;   /* TRIG pressed on the stock TRIG page */
 static unsigned char func_held;         /* FUNC is down (followed on every key event) */
 static unsigned char redraw;            /* something on the page changed */
 static long enc_acc[8];
@@ -672,9 +711,23 @@ static int shown(void *brain)
     return brain && (page_up(brain, &digisnake_page) || page_up(brain, &digisnake_page_midi));
 }
 
+/* The stock page just before ours (the TRIG page) on screen: -> our page, or 0. */
+static struct core_page *stock_trig_up(void *brain)
+{
+    static struct core_page probe;
+    struct core_page *pg = page_for(fw_active_track);
+    if (!brain || !pg->view || pg->pos < 1)
+        return 0;
+    probe.view = pg->view;
+    probe.pos = pg->pos - 1;
+    return core_page_shown(brain, &probe) ? pg : 0;
+}
+
 static void randomise(struct snake *s, int pg)
 {
     int c, r = s->set[P_RANGE];
+    if (r < 1 || r > NOTE_MAX)
+        r = 12;                         /* never all zeros */
     ui_rand ^= fw_timeline;
     for (c = 0; c < CELLS; c++) {
         unsigned long x = xorshift(&ui_rand);
@@ -697,7 +750,7 @@ static void randomise(struct snake *s, int pg)
         s->set[P_DIR] = (unsigned char)(xorshift(&ui_rand) % DIRS);
         s->set[P_LEN] = (unsigned char)(3 + xorshift(&ui_rand) % (CELLS - 2));   /* 3-8 */
         s->set[P_DIV] = divs[xorshift(&ui_rand) & 7];
-        s->set[P_RANGE] = (unsigned char)(xorshift(&ui_rand) % (NOTE_MAX + 1));
+        s->set[P_RANGE] = (unsigned char)(5 + xorshift(&ui_rand) % (NOTE_MAX - 4));   /* 5-24 */
         s->set[P_SHIFT] = (unsigned char)(xorshift(&ui_rand) % CELLS);
     }
 }
@@ -801,7 +854,7 @@ static int next_stop(int v, long d, const signed char *stops, int n)
 }
 static const signed char note_stops[5] = { -24, -12, 0, 12, 24 };
 static const signed char vel_stops[5] = { 1, 32, 64, 96, 127 };
-static const signed char range_stops[3] = { 0, 12, 24 };
+static const signed char range_stops[3] = { 1, 12, 24 };
 
 /* Leave for TRIG's next page, as a press of TRIG would: core_page_open steps
  * the view until it shows the place given. */
@@ -840,6 +893,30 @@ int digisnake_key(void *brain, void *ev)
             func_held = (unsigned char)(flags & F_DOWN);
     } else if (flags & F_FUNC)
         func_held = 1;
+    /* TRIG on the stock TRIG page: ours, so the Snake page opens however long
+     * TRIG was held (the stock steps a page only on a short press). Another
+     * key while it is down leaves it to that key: no page change. */
+    if (!in_open && stock_held) {
+        if (key == KEY_TRIG) {
+            if ((flags & F_UP) || !(flags & F_DOWN)) {
+                struct core_page *pg = page_for(fw_active_track);
+                stock_held = 0;
+                if (!stock_used && pg->view) {
+                    in_open = 1;
+                    core_page_open(brain, ev, KEY_TRIG, pg);
+                    in_open = 0;
+                    redraw = 1;
+                }
+            }
+            return 1;
+        }
+        if (flags & F_DOWN)
+            stock_used = 1;
+    } else if (!in_open && key == KEY_TRIG && down && !trig_held && stock_trig_up(brain)) {
+        stock_held = 1;
+        stock_used = 0;
+        return 1;
+    }
     if (in_open || (!trig_held && !shown(brain)))
         return 0;
     t = ui_track();
@@ -872,8 +949,9 @@ int digisnake_key(void *brain, void *ev)
         trig_held = 0;
         return 0;
     }
-    if (!down)
-        return 0;                           /* releases and repeats: stock */
+    if (!down)                              /* releases and repeats: stock, but */
+        return key == KEY_LEFT || key == KEY_RIGHT     /* the arrows' would nudge the tempo */
+            || key == KEY_UP || key == KEY_DOWN;
 
     if (key == KEY_YES && (flags & F_FUNC)) {   /* (with TRIG held too) */
         trig_used = 1;
@@ -1039,22 +1117,6 @@ int digisnake_enc(void *brain, void *ev)
     return 1;
 }
 
-/* The Mod Menu's SNAKE: the page. */
-void digisnake_menu_open(void *brain, void *ev, int32_t track)
-{
-    digisnake_brain = brain;
-    core_page_open(brain, ev, KEY_TRIG, page_for(track >= 0 && track < TRACKS ? track : fw_active_track));
-}
-
-static const unsigned short digisnake_icon[16] = {      /* a snake on a 4 x 2 grid */
-    0x0000, 0x0000, 0x7ffe, 0x4002, 0x5ffa, 0x500a, 0x57ea, 0x542a,
-    0x542a, 0x57ea, 0x500a, 0x5ffa, 0x4002, 0x7ffe, 0x0000, 0x0000
-};
-
-const struct core_menu_item digisnake_menu = {
-    "SNAKE", digisnake_menu_open, CORE_MENU_ICON, digisnake_icon
-};
-
 /* ---- drawing (ev_tick, ev_draw): 128 x 64, y = 0 the bottom row --------- */
 typedef void (*rect_fn)(void *bmp, int x0, int y0, int x1, int y1, int colour);
 typedef int (*text_fn)(void *bmp, const void *font, int x, int y, int maxlen, const char *fmt, ...);
@@ -1077,7 +1139,7 @@ void digisnake_tick(void *ctrl)
     }
     if (fw_transport == 0)
         for (t = 0; t < TRACKS; t++)
-            reset_req[t] = 1;
+            rewind[t] = 1;                  /* PLAY starts every path again */
     if (save_wait && !--save_wait)
         mirror_request();                   /* 1.5 s after the last change */
     speed_sync();

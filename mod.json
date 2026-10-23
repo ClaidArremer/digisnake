@@ -1,11 +1,11 @@
 {
  "id": "digisnake",
- "version": "1.1",
+ "version": "1.3",
  "title": "digisnake",
  "category": "Sequencer",
  "license": "GPL-2.0-or-later",
  "author": "Robbie",
- "description": "A Cartesian step sequencer after MDD Snake (and Make Noise's Rene): eight steps in a 4 x 2 grid that matches knobs A-H, walked by a path in one of seven shapes (ROWS, SNAKE, COLS, ZIGZAG, DIAG, CORNER, HOP), forwards, backwards, ping-pong or at random. Per track, synth and MIDI: NOTES (semitones from NOTE, quantised to a scale in the keyboard's ROOT), GATES and VELOCITY pages, and a PATH page (ON, SHAPE, DIR, LEN, DIV: 1/8, 1/4, 1/2, 1X or 2X (1/2 plays every other step, eighth notes at 16th steps), the track at twice its speed in per-track SCALE mode, SCALE, RANGE, SHIFT), saved with the project. The page is TRIG's next page (press TRIG again) on synth and MIDI tracks, or SNAKE in core-dn1's Mod Menu; LEFT/RIGHT change page, hold TRIG + YES randomises a page (PATH: all but SNAKE and SCALE), hold TRIG + REC copies a page and TRIG + STOP pastes it onto another track, TRIG + PLAY clears it, TRIG + FUNC + REC prints the snake into the track's own trigs, notes and velocities and turns SNAKE off, FUNC + YES all of them, hold TRIG + NO goes back to how the snake was when TRIG went down, FUNC + NO to before a run of FUNC + YES, FUNC + a knob jumps (NOTES by octaves, VELOCITY by quarters, RANGE 0/12/24). On OS 1.44 the stock drop-down message names what happened, and the snake survives a power cycle. With DIRECT JUMP 1.4 or later in the build, a pattern start (START ON BAR) relaunches every snake from its path's start, with the pattern. For OS 1.43 and 1.44; needs core-dn1 3.3 and seq-events.",
+ "description": "A Cartesian step sequencer after MDD Snake (and Make Noise's Rene): eight steps in a 4 x 2 grid that matches knobs A-H, walked by a path in one of seven shapes (ROWS, SNAKE, COLS, ZIGZAG, DIAG, CORNER, HOP), forwards, backwards, ping-pong or at random. Per track, synth and MIDI: NOTES (semitones from NOTE, quantised to a scale in the keyboard's ROOT), GATES and VELOCITY pages, and a PATH page (ON, SHAPE, DIR, LEN, DIV: 1/8, 1/4, 1/2, 1X or 2X (1/2 plays every other step, eighth notes at 16th steps), the track at twice its speed in per-track SCALE mode, SCALE, RANGE, SHIFT), saved with the project. The page is TRIG's next page (press TRIG again) on synth and MIDI tracks (not in core-dn1's Mod Menu, which it leaves free); LEFT/RIGHT change page, hold TRIG + YES randomises a page (PATH: all but SNAKE and SCALE), hold TRIG + REC copies a page and TRIG + STOP pastes it onto another track, TRIG + PLAY clears it, TRIG + FUNC + REC prints the snake into the track's own trigs, notes and velocities and turns SNAKE off, FUNC + YES all of them, hold TRIG + NO goes back to how the snake was when TRIG went down, FUNC + NO to before a run of FUNC + YES, FUNC + a knob jumps (NOTES by octaves, VELOCITY by quarters, RANGE 1/12/24). On OS 1.44 the stock drop-down message names what happened, and the snake survives a power cycle. With DIRECT JUMP 1.4 or later in the build, a pattern start (START ON BAR) relaunches every snake from its path's start, with the pattern. For OS 1.43 and 1.44; needs core-dn1 3.3 and seq-events.",
  "device": "digitone-mk1",
  "os": "1.43",
  "sources": [
@@ -101,19 +101,6 @@
      0,
      "abs32",
      "sym:digisnake_projdata2",
-     0
-    ]
-   ]
-  },
-  {
-   "to": "core_menu",
-   "order": 52,
-   "data": "00000000",
-   "relocs": [
-    [
-     0,
-     "abs32",
-     "sym:digisnake_menu",
      0
     ]
    ]

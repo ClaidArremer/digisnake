@@ -25,14 +25,14 @@ By Robbie (designed and tested on a Digitone mk1, OS 1.44). GPL-2.0-or-later.
 
 ## Install
 
-In the elekloader app, add both files for your OS from `elemods/`: `digisnake-1.1-os1.44.elemod` and
+In the elekloader app, add both files for your OS from `elemods/`: `digisnake-1.3-os1.44.elemod` and
 `seq-events-0.1-os1.44.elemod` (or the two `-os1.43` files). Tick both, keep the app's core-dn1 ticked,
 build, and send the firmware to the Digitone. From the command line:
 
 ```
 python -m elekloader.patch --stock Digitone_and_Digitone_Keys_OS1.44.syx \
   --mod core-4.1.1-os1.44.elemod --mod elemods/seq-events-0.1-os1.44.elemod \
-  --mod elemods/digisnake-1.1-os1.44.elemod --out Digitone_digisnake.syx
+  --mod elemods/digisnake-1.3-os1.44.elemod --out Digitone_digisnake.syx
 ```
 
 ## Opening it
@@ -40,7 +40,8 @@ python -m elekloader.patch --stock Digitone_and_Digitone_Keys_OS1.44.syx \
 Press **TRIG** twice: DIGISNAKE is the page after the stock TRIG page, on synth and MIDI tracks alike.
 Turn the track's **SNAKE** on (PATH page, knob A) and it plays the snake in place of its own trigs; lock
 trigs still play. Everything is per track, saved with the project, and on OS 1.44 kept over a power
-cycle. New projects start with a little demo line.
+cycle. New projects start with a little demo line. TRIG opens the page however long it is held. DIGISNAKE
+has no entry in core-dn1's Mod Menu (hold a track key), so that stays free for machines and other mods.
 
 ## Pages
 
@@ -70,7 +71,7 @@ The pages as DIGISNAKE draws them (the Digitone's own title bar sits above).
 | D | LEN | Path length, 1–8 cells |
 | E | DIV | 1/8, 1/4, 1/2, 1X, 2X. At 1/2 the snake plays every other step (eighth notes at 16th steps), at 1/4 every fourth. 2X runs the track at twice its own speed and needs the pattern's SCALE set to per track; DIGISNAKE puts the track's speed back when 2X or SNAKE goes off |
 | F | SCALE | CHR, MAJ, MIN, DOR, PHR, LYD, MIX, HMIN, PENT, mPNT, BLUE, WHOL, in the keyboard's ROOT |
-| G | RANGE | The spread of randomised notes, ±0–24 semitones (FUNC + knob: 0 / 12 / 24) |
+| G | RANGE | The spread of randomised notes, ±1–24 semitones (FUNC + knob: 1 / 12 / 24) |
 | H | SHIFT | Where on the path the snake starts, 0–7 |
 
 ## Keys
@@ -98,6 +99,16 @@ With [DIRECT JUMP](https://github.com/ClaidArremer/directjump) 1.4 or later in t
 its START ON BAR (from step 1 on the next bar line, or the playing pattern relaunched on the beat) starts every
 snake from the beginning of its path too, so the whole groove relaunches together. A legato jump leaves the
 snakes walking. Without DIRECT JUMP nothing changes. Tested on a Digitone mk1 (OS 1.44) with DIRECT JUMP 1.5.
+
+## Changes
+
+- **1.3**: out of core-dn1's Mod Menu; the page stays on TRIG.
+- **1.2**: randomised notes no longer all come out at 0 (RANGE now runs from 1; a saved 0 loads as 12, and a
+  randomised PATH picks 5 to 24); TRIG opens the page on a long press too; LEFT / RIGHT / UP / DOWN held on
+  the page no longer nudge the tempo; the snake's step 1 is the path's start from PLAY, and PRINT while
+  playing writes what each step plays next time round.
+- **1.1**: restarts the snakes on DIRECT JUMP's pattern starts.
+- **1.0**: the first release.
 
 ## How it works
 
